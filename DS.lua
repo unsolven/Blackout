@@ -1,4 +1,4 @@
-local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+local Rayfield = loadstring(game:HttpGet("https://raw.githubusercontent.com/unsolven/Blackout/refs/heads/main/CustomRayfield"))()
 
 Rayfield:Notify({
     Title = "Blackout",
