@@ -1,5 +1,8 @@
--- Roblox UI Library v1.0
--- Biblioteca de UI moderna com cores roxas/pretas/cinzas
+--[[
+    Ashlabs UI Library v2.0
+    Inspirado no design fornecido pelo usuário.
+    Estrutura moderna com navegação lateral, header customizado e novos elementos.
+]]
 
 local UILibrary = {}
 UILibrary.__index = UILibrary
@@ -13,324 +16,384 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Configurações de tema
+--================================================================--
+--[[                           TEMA                             ]]--
+--================================================================--
 local Theme = {
-    MainPurple = Color3.fromRGB(120, 81, 169),
-    DarkPurple = Color3.fromRGB(75, 51, 105),
-    DarkerPurple = Color3.fromRGB(45, 30, 65),
-    Black = Color3.fromRGB(25, 25, 30),
-    DarkGray = Color3.fromRGB(40, 40, 45),
-    Gray = Color3.fromRGB(55, 55, 65),
-    LightGray = Color3.fromRGB(180, 180, 190),
-    White = Color3.fromRGB(255, 255, 255),
-    Green = Color3.fromRGB(85, 170, 85),
-    Red = Color3.fromRGB(220, 85, 85)
+    Background = Color3.fromRGB(26, 24, 32),        -- Cor de fundo principal
+    Secondary = Color3.fromRGB(38, 35, 46),         -- Cor dos painéis internos
+    Tertiary = Color3.fromRGB(54, 51, 64),          -- Cor para elementos como dropdowns
+    Main = Color3.fromRGB(120, 34, 255),            -- Roxo principal para seleção
+    Text = Color3.fromRGB(230, 230, 230),           -- Texto principal
+    SubText = Color3.fromRGB(150, 150, 150),        -- Texto secundário (menos importante)
+    Close = Color3.fromRGB(255, 95, 87),            -- Botão de fechar
+    Minimize = Color3.fromRGB(255, 189, 46),        -- Botão de minimizar
+    Maximize = Color3.fromRGB(39, 206, 64),         -- Botão de maximizar/outra ação
+    Outline = Color3.fromRGB(68, 64, 80)            -- Borda sutil
 }
 
--- Função para criar uma nova janela
+--================================================================--
+--[[                      FUNÇÕES PRINCIPAIS                    ]]--
+--================================================================--
+
 function UILibrary.new(config)
     config = config or {}
     
     local self = setmetatable({
         Title = config.Title or "UI Library",
-        ToggleKey = config.ToggleKey or Enum.KeyCode.RightShift, -- Alterado para uma tecla comum de Hub
+        ToggleKey = config.ToggleKey or Enum.KeyCode.RightShift,
         Tabs = {},
         CurrentTab = nil,
-        IsVisible = true,
-        StatusTexts = {},
-        IsMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+        IsVisible = true
     }, UILibrary)
     
-    self:CreateUI()
-    self:SetupControls()
+    self:_CreateUI()
+    self:_SetupControls()
     
     return self
 end
 
-function UILibrary:CreateUI()
-    -- ScreenGui principal
+function UILibrary:_CreateUI()
     self.ScreenGui = Instance.new("ScreenGui")
-    self.ScreenGui.Name = "UILibrary_" .. math.random(1000, 9999)
+    self.ScreenGui.Name = "Ashlabs_UI_" .. math.random(1000, 9999)
     self.ScreenGui.Parent = playerGui
     self.ScreenGui.ResetOnSpawn = false
     self.ScreenGui.IgnoreGuiInset = true
-    
-    -- Frame principal
+
+    -- Frame Principal
     self.MainFrame = Instance.new("Frame")
     self.MainFrame.Name = "MainFrame"
     self.MainFrame.Parent = self.ScreenGui
-    self.MainFrame.BackgroundColor3 = Theme.Black
-    self.MainFrame.BorderSizePixel = 0
-    self.MainFrame.Size = UDim2.new(0, self.IsMobile and 350 or 450, 0, self.IsMobile and 400 or 500)
-    self.MainFrame.Position = UDim2.new(0.5, -self.MainFrame.Size.X.Offset / 2, 0.5, -self.MainFrame.Size.Y.Offset / 2)
+    self.MainFrame.BackgroundColor3 = Theme.Background
+    self.MainFrame.BorderSizePixel = 1
+    self.MainFrame.BorderColor3 = Theme.Outline
+    self.MainFrame.Size = UDim2.new(0, 550, 0, 350)
+    self.MainFrame.Position = UDim2.new(0.5, -275, 0.5, -175)
     self.MainFrame.Active = true
     self.MainFrame.Draggable = true
+    Instance.new("UICorner", self.MainFrame).CornerRadius = UDim.new(0, 8)
+
+    -- Header (Barra de Título)
+    local Header = Instance.new("Frame")
+    Header.Name = "Header"
+    Header.Parent = self.MainFrame
+    Header.BackgroundColor3 = Theme.Secondary
+    Header.Size = UDim2.new(1, 0, 0, 40)
+    local HeaderCorner = Instance.new("UICorner", Header)
+    HeaderCorner.CornerRadius = UDim.new(0, 8)
+    -- Arredonda apenas os cantos superiores
+    task.defer(function() HeaderCorner.Parent = nil; Instance.new("UICorner", Header).CornerRadius = UDim.new(0,8); Header.ClipsDescendants = true end)
+
+
+    -- Ícone do Título (Exemplo: use o seu asset ID)
+    local TitleIcon = Instance.new("ImageLabel")
+    TitleIcon.Name = "TitleIcon"
+    TitleIcon.Parent = Header
+    TitleIcon.Image = "rbxassetid://6031023223" -- ID de um ícone genérico de engrenagem
+    TitleIcon.BackgroundTransparency = 1
+    TitleIcon.Size = UDim2.new(0, 20, 0, 20)
+    TitleIcon.Position = UDim2.new(0, 15, 0.5, -10)
     
-    -- Corner arredondado
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = self.MainFrame
+    -- Texto do Título
+    local TitleLabel = Instance.new("TextLabel")
+    TitleLabel.Name = "TitleLabel"
+    TitleLabel.Parent = Header
+    TitleLabel.BackgroundTransparency = 1
+    TitleLabel.Text = self.Title
+    TitleLabel.Font = Enum.Font.GothamBold
+    TitleLabel.TextColor3 = Theme.Text
+    TitleLabel.TextSize = 16
+    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLabel.Size = UDim2.new(1, -80, 1, 0)
+    TitleLabel.Position = UDim2.new(0, 45, 0, 0)
+
+    -- Botões de Controle da Janela (Fechar, etc.)
+    local ControlButtons = Instance.new("Frame")
+    ControlButtons.Parent = Header
+    ControlButtons.BackgroundTransparency = 1
+    ControlButtons.Size = UDim2.new(0, 80, 1, 0)
+    ControlButtons.Position = UDim2.new(1, -90, 0, 0)
+    local ControlLayout = Instance.new("UIListLayout", ControlButtons)
+    ControlLayout.FillDirection = Enum.FillDirection.Horizontal
+    ControlLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+    ControlLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+    ControlLayout.Padding = UDim.new(0, 8)
     
-    -- Título
-    self.TitleLabel = Instance.new("TextLabel")
-    self.TitleLabel.Name = "Title"
-    self.TitleLabel.Parent = self.MainFrame
-    self.TitleLabel.BackgroundTransparency = 1
-    self.TitleLabel.Size = UDim2.new(1, 0, 0, 40)
-    self.TitleLabel.Position = UDim2.new(0, 0, 0, 0)
-    self.TitleLabel.Text = self.Title
-    self.TitleLabel.TextColor3 = Theme.White
-    self.TitleLabel.TextSize = 18
-    self.TitleLabel.Font = Enum.Font.GothamBold
+    local function CreateControlButton(color)
+        local btn = Instance.new("Frame")
+        btn.Parent = ControlButtons
+        btn.BackgroundColor3 = color
+        btn.Size = UDim2.new(0, 14, 0, 14)
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
+        return btn
+    end
+    CreateControlButton(Theme.Minimize)
+    CreateControlButton(Theme.Maximize)
+    CreateControlButton(Theme.Close).MouseButton1Click:Connect(function() self.ScreenGui:Destroy() end)
     
-    -- Separador
-    local separator = Instance.new("Frame")
-    separator.Name = "Separator"
-    separator.Parent = self.MainFrame
-    separator.BackgroundColor3 = Theme.MainPurple
-    separator.BorderSizePixel = 0
-    separator.Size = UDim2.new(1, 0, 0, 2)
-    separator.Position = UDim2.new(0, 0, 0, 40)
+    -- Container Principal (Navegação + Conteúdo)
+    local Container = Instance.new("Frame")
+    Container.Name = "Container"
+    Container.Parent = self.MainFrame
+    Container.BackgroundTransparency = 1
+    Container.Size = UDim2.new(1, -20, 1, -50)
+    Container.Position = UDim2.new(0, 10, 0, 40)
     
-    -- Container das abas (lateral esquerda)
-    self.TabContainer = Instance.new("ScrollingFrame")
-    self.TabContainer.Name = "TabContainer"
-    self.TabContainer.Parent = self.MainFrame
-    self.TabContainer.BackgroundColor3 = Theme.DarkGray
-    self.TabContainer.BorderSizePixel = 0
-    self.TabContainer.Size = UDim2.new(0, 120, 1, -80)
-    self.TabContainer.Position = UDim2.new(0, 0, 0, 42)
-    self.TabContainer.ScrollBarThickness = 4
-    self.TabContainer.ScrollBarImageColor3 = Theme.MainPurple
-    self.TabContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+    -- Navegação Lateral (Esquerda)
+    self.NavFrame = Instance.new("Frame")
+    self.NavFrame.Name = "NavFrame"
+    self.NavFrame.Parent = Container
+    self.NavFrame.BackgroundTransparency = 1
+    self.NavFrame.Size = UDim2.new(0, 130, 1, 0)
     
-    local tabCorner = Instance.new("UICorner")
-    tabCorner.CornerRadius = UDim.new(0, 4)
-    tabCorner.Parent = self.TabContainer
+    self.NavLayout = Instance.new("UIListLayout", self.NavFrame)
+    self.NavLayout.Padding = UDim.new(0, 5)
     
-    local tabLayout = Instance.new("UIListLayout")
-    tabLayout.Parent = self.TabContainer
-    tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    tabLayout.Padding = UDim.new(0, 2)
-    
-    -- Container do conteúdo (direita)
-    self.ContentContainer = Instance.new("ScrollingFrame")
-    self.ContentContainer.Name = "ContentContainer"
-    self.ContentContainer.Parent = self.MainFrame
-    self.ContentContainer.BackgroundColor3 = Theme.DarkGray
-    self.ContentContainer.BorderSizePixel = 0
-    self.ContentContainer.Size = UDim2.new(1, -125, 1, -80)
-    self.ContentContainer.Position = UDim2.new(0, 125, 0, 42)
-    self.ContentContainer.ScrollBarThickness = 4
-    self.ContentContainer.ScrollBarImageColor3 = Theme.MainPurple
-    self.ContentContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
-    
-    local contentCorner = Instance.new("UICorner")
-    contentCorner.CornerRadius = UDim.new(0, 4)
-    contentCorner.Parent = self.ContentContainer
-    
-    -- Status bar (embaixo)
-    self.StatusBar = Instance.new("Frame")
-    self.StatusBar.Name = "StatusBar"
-    self.StatusBar.Parent = self.MainFrame
-    self.StatusBar.BackgroundColor3 = Theme.DarkerPurple
-    self.StatusBar.BorderSizePixel = 0
-    self.StatusBar.Size = UDim2.new(1, 0, 0, 35)
-    self.StatusBar.Position = UDim2.new(0, 0, 1, -35)
-    
-    local statusCorner = Instance.new("UICorner")
-    statusCorner.CornerRadius = UDim.new(0, 4)
-    statusCorner.Parent = self.StatusBar
-    
-    self.StatusLabel = Instance.new("TextLabel")
-    self.StatusLabel.Name = "StatusLabel"
-    self.StatusLabel.Parent = self.StatusBar
-    self.StatusLabel.BackgroundTransparency = 1
-    self.StatusLabel.Size = UDim2.new(1, -10, 1, 0)
-    self.StatusLabel.Position = UDim2.new(0, 5, 0, 0)
-    self.StatusLabel.Text = "Nenhum toggle ativo"
-    self.StatusLabel.TextColor3 = Theme.LightGray
-    self.StatusLabel.TextSize = 12
-    self.StatusLabel.Font = Enum.Font.Gotham
-    self.StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-    
-    if self.IsMobile then self:CreateMobileToggle() end
+    -- Conteúdo (Direita)
+    self.ContentFrame = Instance.new("Frame")
+    self.ContentFrame.Name = "ContentFrame"
+    self.ContentFrame.Parent = Container
+    self.ContentFrame.BackgroundColor3 = Theme.Secondary
+    self.ContentFrame.BorderSizePixel = 0
+    self.ContentFrame.Size = UDim2.new(1, -140, 1, 0)
+    self.ContentFrame.Position = UDim2.new(0, 140, 0, 0)
+    Instance.new("UICorner", self.ContentFrame).CornerRadius = UDim.new(0, 6)
+
 end
 
-function UILibrary:CreateMobileToggle()
-    self.MobileButton = Instance.new("TextButton")
-    self.MobileButton.Name = "MobileToggle"
-    self.MobileButton.Parent = self.ScreenGui
-    self.MobileButton.BackgroundColor3 = Theme.DarkerPurple
-    self.MobileButton.BorderSizePixel = 0
-    self.MobileButton.Size = UDim2.new(0, 50, 0, 50)
-    self.MobileButton.Position = UDim2.new(0, 10, 0, 100)
-    self.MobileButton.Text = ""
-    self.MobileButton.Active = true
-    self.MobileButton.Draggable = true
-    
-    local mobileCorner = Instance.new("UICorner")
-    mobileCorner.CornerRadius = UDim.new(0, 25)
-    mobileCorner.Parent = self.MobileButton
-    
-    local icon = Instance.new("TextLabel")
-    icon.Parent = self.MobileButton
-    icon.BackgroundTransparency = 1
-    icon.Size = UDim2.new(1, 0, 1, 0)
-    icon.Text = "⚙️"
-    icon.TextColor3 = Theme.White
-    icon.TextSize = 20
-    
-    self.MobileButton.MouseButton1Click:Connect(function() self:Toggle() end)
-end
-
-function UILibrary:SetupControls()
+function UILibrary:_SetupControls()
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if gameProcessed then return end
-        if input.KeyCode == self.ToggleKey then self:Toggle() end
+        if input.KeyCode == self.ToggleKey then
+            self.IsVisible = not self.IsVisible
+            self.MainFrame.Visible = self.IsVisible
+        end
     end)
-end
-
-function UILibrary:Toggle()
-    self.IsVisible = not self.IsVisible
-    local pos = self.MainFrame.Position
-    local size = self.MainFrame.Size
-    local targetPosition = self.IsVisible and 
-        UDim2.new(0.5, -size.X.Offset / 2, 0.5, -size.Y.Offset / 2) or 
-        UDim2.new(0.5, -size.X.Offset / 2, 1, 50)
-    
-    local tween = TweenService:Create(self.MainFrame, 
-        TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
-        {Position = targetPosition}
-    )
-    tween:Play()
-end
-
-function UILibrary:CreateTab(name)
-    local tab = { Name = name, Elements = {}, Frame = nil, Button = nil }
-    
-    tab.Button = Instance.new("TextButton")
-    tab.Button.Name = name .. "Button"; tab.Button.Parent = self.TabContainer
-    tab.Button.BackgroundColor3 = Theme.Gray; tab.Button.BorderSizePixel = 0
-    tab.Button.Size = UDim2.new(1, -4, 0, 30); tab.Button.Text = name
-    tab.Button.TextColor3 = Theme.White; tab.Button.TextSize = 14
-    tab.Button.Font = Enum.Font.Gotham
-    
-    local buttonCorner = Instance.new("UICorner"); buttonCorner.CornerRadius = UDim.new(0, 4); buttonCorner.Parent = tab.Button
-    
-    tab.Frame = Instance.new("Frame")
-    tab.Frame.Name = name .. "Frame"; tab.Frame.Parent = self.ContentContainer
-    tab.Frame.BackgroundTransparency = 1; tab.Frame.Size = UDim2.new(1, 0, 1, 0)
-    tab.Frame.Position = UDim2.new(0, 0, 0, 0); tab.Frame.Visible = false
-    
-    local layout = Instance.new("UIListLayout"); layout.Parent = tab.Frame
-    layout.SortOrder = Enum.SortOrder.LayoutOrder; layout.Padding = UDim.new(0, 8)
-    
-    tab.Button.MouseButton1Click:Connect(function() self:SelectTab(tab) end)
-    
-    if #self.Tabs == 0 then self:SelectTab(tab) end
-    table.insert(self.Tabs, tab)
-    
-    self.TabContainer.CanvasSize = UDim2.new(0, 0, 0, #self.Tabs * 32)
-    return tab
 end
 
 function UILibrary:SelectTab(selectedTab)
     if self.CurrentTab then
-        self.CurrentTab.Frame.Visible = false
-        self.CurrentTab.Button.BackgroundColor3 = Theme.Gray
+        TweenService:Create(self.CurrentTab.Button, TweenInfo.new(0.2), {BackgroundColor3 = Theme.Background}):Play()
+        self.CurrentTab.Container.Visible = false
     end
-    selectedTab.Frame.Visible = true
-    selectedTab.Button.BackgroundColor3 = Theme.MainPurple
+    
+    TweenService:Create(selectedTab.Button, TweenInfo.new(0.2), {BackgroundColor3 = Theme.Main}):Play()
+    selectedTab.Container.Visible = true
     self.CurrentTab = selectedTab
 end
 
-function UILibrary:CreateButton(tab, text, callback)
-    local button = Instance.new("TextButton")
-    button.Name = text .. "Button"; button.Parent = tab.Frame
-    button.BackgroundColor3 = Theme.MainPurple; button.BorderSizePixel = 0
-    button.Size = UDim2.new(1, 0, 0, 35); button.Text = text
-    button.TextColor3 = Theme.White; button.TextSize = 14
-    button.Font = Enum.Font.Gotham
-    
-    local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 4); corner.Parent = button
-    
-    button.MouseEnter:Connect(function() TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Theme.DarkPurple}):Play() end)
-    button.MouseLeave:Connect(function() TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Theme.MainPurple}):Play() end)
-    button.MouseButton1Click:Connect(function() if callback then pcall(callback) end end)
-    
-    self:UpdateCanvasSize(tab)
-    return button
-end
+--================================================================--
+--[[                    ELEMENTOS DA UI                         ]]--
+--================================================================--
 
-function UILibrary:CreateToggle(tab, text, defaultState, callback)
-    defaultState = defaultState or false
+--- Cria um botão na barra de navegação lateral.
+function UILibrary:CreateTab(name, iconId)
+    iconId = iconId or "rbxassetid://3926307971" -- Ícone padrão (casa)
+
+    local tab = {}
     
-    local container = Instance.new("Frame")
-    container.Name = text .. "Container"; container.Parent = tab.Frame
-    container.BackgroundColor3 = Theme.Gray; container.BorderSizePixel = 0
-    container.Size = UDim2.new(1, 0, 0, 35)
+    -- Botão de Navegação
+    tab.Button = Instance.new("TextButton")
+    tab.Button.Name = name
+    tab.Button.Parent = self.NavFrame
+    tab.Button.BackgroundColor3 = Theme.Background -- Cor inicial
+    tab.Button.Size = UDim2.new(1, 0, 0, 35)
+    tab.Button.Text = "" -- O texto será um label separado
+    Instance.new("UICorner", tab.Button).CornerRadius = UDim.new(0, 6)
     
-    local containerCorner = Instance.new("UICorner"); containerCorner.CornerRadius = UDim.new(0, 4); containerCorner.Parent = container
+    -- Ícone do botão
+    local Icon = Instance.new("ImageLabel", tab.Button)
+    Icon.Image = iconId
+    Icon.BackgroundTransparency = 1
+    Icon.Size = UDim2.new(0, 18, 0, 18)
+    Icon.Position = UDim2.new(0, 12, 0.5, -9)
     
-    local label = Instance.new("TextLabel"); label.Parent = container
-    label.BackgroundTransparency = 1; label.Size = UDim2.new(1, -50, 1, 0)
-    label.Position = UDim2.new(0, 10, 0, 0); label.Text = text
-    label.TextColor3 = Theme.White; label.TextSize = 14
-    label.Font = Enum.Font.Gotham; label.TextXAlignment = Enum.TextXAlignment.Left
+    -- Texto do botão
+    local Label = Instance.new("TextLabel", tab.Button)
+    Label.Text = "  " .. name
+    Label.BackgroundTransparency = 1
+    Label.Font = Enum.Font.GothamBold
+    Label.TextColor3 = Theme.Text
+    Label.TextSize = 15
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Size = UDim2.new(1, -30, 1, 0)
+    Label.Position = UDim2.new(0, 30, 0, 0)
     
-    local toggle = Instance.new("TextButton"); toggle.Parent = container
-    toggle.BackgroundColor3 = defaultState and Theme.Green or Theme.Red
-    toggle.BorderSizePixel = 0; toggle.Size = UDim2.new(0, 35, 0, 20)
-    toggle.Position = UDim2.new(1, -45, 0.5, -10); toggle.Text = defaultState and "ON" or "OFF"
-    toggle.TextColor3 = Theme.White; toggle.TextSize = 12
-    toggle.Font = Enum.Font.GothamBold
+    -- Container para o conteúdo desta aba
+    tab.Container = Instance.new("ScrollingFrame")
+    tab.Container.Name = name .. "_Content"
+    tab.Container.Parent = self.ContentFrame
+    tab.Container.BackgroundColor3 = Theme.Secondary
+    tab.Container.BorderSizePixel = 0
+    tab.Container.Size = UDim2.new(1, 0, 1, 0)
+    tab.Container.Visible = false
+    tab.Container.CanvasSize = UDim2.new(0,0,0,0)
+    tab.Container.ScrollBarThickness = 3
     
-    local toggleCorner = Instance.new("UICorner"); toggleCorner.CornerRadius = UDim.new(0, 10); toggleCorner.Parent = toggle
+    local layout = Instance.new("UIListLayout", tab.Container)
+    layout.Padding = UDim.new(0, 10)
+    Instance.new("UIPadding", tab.Container).PaddingTop = UDim.new(0, 10)
     
-    local isToggled = defaultState
-    self.StatusTexts[text] = isToggled
-    self:UpdateStatus()
+    tab.Layout = layout
     
-    toggle.MouseButton1Click:Connect(function()
-        isToggled = not isToggled
-        local targetColor = isToggled and Theme.Green or Theme.Red
-        local targetText = isToggled and "ON" or "OFF"
-        
-        TweenService:Create(toggle, TweenInfo.new(0.2), {BackgroundColor3 = targetColor}):Play()
-        toggle.Text = targetText
-        
-        self.StatusTexts[text] = isToggled
-        self:UpdateStatus()
-        
-        if callback then pcall(callback, isToggled) end
+    tab.Button.MouseButton1Click:Connect(function()
+        self:SelectTab(tab)
     end)
     
-    self:UpdateCanvasSize(tab)
-    return container
-end
-
-function UILibrary:UpdateStatus()
-    local activeToggles = {}
-    for name, state in pairs(self.StatusTexts) do if state then table.insert(activeToggles, name) end end
+    table.insert(self.Tabs, tab)
     
-    if #activeToggles > 0 then
-        self.StatusLabel.Text = "Ativo: " .. table.concat(activeToggles, ", ")
-        self.StatusLabel.TextColor3 = Theme.Green
-    else
-        self.StatusLabel.Text = "Nenhum toggle ativo"
-        self.StatusLabel.TextColor3 = Theme.LightGray
+    -- Seleciona a primeira aba criada por padrão
+    if #self.Tabs == 1 then
+        self:SelectTab(tab)
+    end
+    
+    return tab
+end
+
+--- Cria um título de seção dentro de uma aba.
+function UILibrary:CreateSection(tab, title)
+    local SectionLabel = Instance.new("TextLabel")
+    SectionLabel.Name = title
+    SectionLabel.Parent = tab.Container
+    SectionLabel.BackgroundTransparency = 1
+    SectionLabel.Size = UDim2.new(1, -20, 0, 25)
+    SectionLabel.Position = UDim2.new(0, 10, 0, 0)
+    SectionLabel.Font = Enum.Font.GothamBold
+    SectionLabel.Text = title
+    SectionLabel.TextColor3 = Theme.Text
+    SectionLabel.TextSize = 16
+    SectionLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    self:_UpdateCanvasSize(tab)
+end
+
+--- Cria um botão com um ícone de ação à direita.
+function UILibrary:CreateButton(tab, text, callback)
+    local Container = Instance.new("Frame")
+    Container.Name = text
+    Container.Parent = tab.Container
+    Container.BackgroundColor3 = Theme.Background
+    Container.Size = UDim2.new(1, -20, 0, 40)
+    Container.Position = UDim2.new(0, 10, 0, 0)
+    Instance.new("UICorner", Container).CornerRadius = UDim.new(0, 6)
+    
+    local Label = Instance.new("TextLabel", Container)
+    Label.Text = text
+    Label.BackgroundTransparency = 1
+    Label.Font = Enum.Font.Gotham
+    Label.TextColor3 = Theme.SubText
+    Label.TextSize = 14
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Size = UDim2.new(1, -50, 1, 0)
+    Label.Position = UDim2.new(0, 15, 0, 0)
+    
+    local ActionButton = Instance.new("ImageButton")
+    ActionButton.Name = "ActionButton"
+    ActionButton.Parent = Container
+    ActionButton.BackgroundColor3 = Theme.Main
+    ActionButton.Size = UDim2.new(0, 28, 0, 28)
+    ActionButton.Position = UDim2.new(1, -38, 0.5, -14)
+    ActionButton.Image = "rbxassetid://6031023223" -- Ícone de "clique" ou similar
+    Instance.new("UICorner", ActionButton).CornerRadius = UDim.new(0, 6)
+    
+    ActionButton.MouseButton1Click:Connect(function()
+        pcall(callback)
+    end)
+    
+    self:_UpdateCanvasSize(tab)
+    return Container
+end
+
+--- Cria uma opção com um menu dropdown.
+function UILibrary:CreateDropdown(tab, text, options, callback)
+    local options = options or {}
+    
+    local Container = Instance.new("Frame", tab.Container)
+    Container.Name = text
+    Container.BackgroundColor3 = Theme.Background
+    Container.Size = UDim2.new(1, -20, 0, 40)
+    Container.Position = UDim2.new(0, 10, 0, 0)
+    Instance.new("UICorner", Container).CornerRadius = UDim.new(0, 6)
+    
+    local Label = Instance.new("TextLabel", Container)
+    Label.Text = text
+    Label.BackgroundTransparency = 1
+    Label.Font = Enum.Font.Gotham
+    Label.TextColor3 = Theme.SubText
+    Label.TextSize = 14
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Size = UDim2.new(0.5, 0, 1, 0)
+    Label.Position = UDim2.new(0, 15, 0, 0)
+    
+    local DropdownFrame = Instance.new("Frame", Container)
+    DropdownFrame.Name = "DropdownFrame"
+    DropdownFrame.BackgroundTransparency = 1
+    DropdownFrame.Size = UDim2.new(0.5, -20, 1, 0)
+    DropdownFrame.Position = UDim2.new(0.5, 10, 0, 0)
+    
+    local DropdownButton = Instance.new("TextButton", DropdownFrame)
+    DropdownButton.Name = "DropdownButton"
+    DropdownButton.BackgroundColor3 = Theme.Tertiary
+    DropdownButton.Size = UDim2.new(1, 0, 0, 28)
+    DropdownButton.Position = UDim2.new(0, 0, 0.5, -14)
+    DropdownButton.Font = Enum.Font.Gotham
+    DropdownButton.Text = options[1] or "Selecione..."
+    DropdownButton.TextColor3 = Theme.Text
+    DropdownButton.TextSize = 13
+    Instance.new("UICorner", DropdownButton).CornerRadius = UDim.new(0, 5)
+    
+    local OptionsList = Instance.new("ScrollingFrame", DropdownFrame)
+    OptionsList.Name = "OptionsList"
+    OptionsList.BackgroundColor3 = Theme.Tertiary
+    OptionsList.Size = UDim2.new(1, 0, 0, 0) -- Começa fechado
+    OptionsList.Position = UDim2.new(0, 0, 1, 5)
+    OptionsList.Visible = false
+    OptionsList.ZIndex = 2
+    OptionsList.ScrollBarThickness = 4
+    Instance.new("UIListLayout", OptionsList).Padding = UDim.new(0, 2)
+    Instance.new("UICorner", OptionsList).CornerRadius = UDim.new(0, 5)
+    
+    local isOpen = false
+    DropdownButton.MouseButton1Click:Connect(function()
+        isOpen = not isOpen
+        OptionsList.Visible = isOpen
+        local numOptions = #options
+        local listHeight = math.min(numOptions * 30, 90) -- Mostra no max 3 opções
+        local tween = TweenService:Create(OptionsList, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, isOpen and listHeight or 0)})
+        tween:Play()
+    end)
+    
+    for _, optionText in pairs(options) do
+        local OptionBtn = Instance.new("TextButton", OptionsList)
+        OptionBtn.Name = optionText
+        OptionBtn.BackgroundColor3 = Theme.Tertiary
+        OptionBtn.BackgroundTransparency = 0.5
+        OptionBtn.Size = UDim2.new(1, 0, 0, 28)
+        OptionBtn.Font = Enum.Font.Gotham
+        OptionBtn.Text = optionText
+        OptionBtn.TextColor3 = Theme.Text
+        OptionBtn.TextSize = 13
+        
+        OptionBtn.MouseButton1Click:Connect(function()
+            DropdownButton.Text = optionText
+            pcall(callback, optionText)
+            isOpen = false
+            OptionsList.Visible = false
+            OptionsList.Size = UDim2.new(1, 0, 0, 0)
+        end)
+    end
+    
+    OptionsList.CanvasSize = UDim2.new(0, 0, 0, #options * 30)
+    
+    self:_UpdateCanvasSize(tab)
+    return Container
+end
+
+function UILibrary:_UpdateCanvasSize(tab)
+    task.wait() -- Dá tempo para a UI calcular o tamanho
+    if tab and tab.Layout then
+        tab.Container.CanvasSize = UDim2.new(0, 0, 0, tab.Layout.AbsoluteContentSize.Y + 20)
     end
 end
 
-function UILibrary:UpdateCanvasSize(tab)
-    -- Adiciona um pequeno atraso para garantir que a UI foi renderizada
-    task.wait() 
-    local layout = tab.Frame:FindFirstChildOfClass("UIListLayout")
-    if layout then
-        tab.Frame.Parent.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
-    end
-end
-
--- ESSENCIAL: Retorne a tabela da biblioteca para que o loadstring possa capturá-la.
 return UILibrary
